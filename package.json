@@ -40,8 +40,9 @@
     "webpack-dev-server": "3.7.2"
   },
   "dependencies": {
+    "@cerebral/inferno": "^4.1.1",
     "history": "^4.9.0",
-    "inferno": "^7",
+    "inferno": "^7.1.13",
     "inferno-component": "^7",
     "inferno-create-element": "^7",
     "inferno-router": "^7",

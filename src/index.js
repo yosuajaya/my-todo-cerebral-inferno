@@ -1,66 +1,110 @@
-// inferno module
-import { render } from 'inferno';
+import { render, Component, linkEvent } from 'inferno';
+import App, { state, props } from 'cerebral'
+import { Container, connect } from '@cerebral/inferno'
 
-// routing modules
-import { BrowserRouter, Switch, Link, Route } from 'inferno-router';
-import { createBrowserHistory } from 'history';
-import MyApp from './MyApp';
-
-const browserHistory = createBrowserHistory();
-function App({ children }) {
-  return (
-    <div>
-      <h1>Application</h1>
-      <Link to="/users">User list</Link>
-      <br />
-      <Link to="/users/user/tester">Tester's page</Link>
-      <br />
-      <Link to="/my-app">My App</Link>
-      {children}
-    </div>
-  );
+const addNewTodoItem = ({ store }) => {
+  store.push(state`todoItems`, { name: new Date().getTime() })
 }
 
-function NoMatch({ children, params }) {
-  return <div>no match</div>;
-}
+const app = new App({
+  state: {
+    todoItems: []
+  },
+  sequences: {
+    newTodoItemAdded: [
+      addNewTodoItem
+    ],
+    onTodoItemRemoved: [
+      ({ props, get, store }) => {
+        const { arrayIndex } = props
+        const tools = [].concat(get(state`todoItems`))
 
-function Home({ children }) {
-  return <div>home</div>;
-}
+        tools.splice(arrayIndex, 1)
 
-// `children` in this case will be the `User` component
-function Users({ match }) {
-  return (
-    <div>
-      <h2>user list</h2>
-      <Route path={match.url + '/user/:username'} component={User} />
-    </div>
-  );
-}
+        store.set(state`todoItems`, tools)
+      }
+    ]
+  }
+})
 
-function User({ match }) {
-  return <h1>{JSON.stringify(match.params)}</h1>;
-}
+const TodoList = connect(
+  {
+    items: state`todoItems`
+  },
+  class TodoList extends Component {
+    _onBtnAddNewItemClicked() {
+      const handler = app.getSequence('newTodoItemAdded')
 
-const routes = (
-  <BrowserRouter history={browserHistory}>
-    <div>
-      <h1>Application</h1>
-      <Link to="/users">User list</Link>
-      <br />
-      <Link to="/users/user/tester">Tester's page</Link>
-      <br />
-      <Link to="/my-app">My App</Link>
+      handler()
+    }
 
-      <Switch>
-        <Route exact path="/" component={Home} />
-        <Route path="/users" component={Users} />
-        <Route path="/my-app" component={MyApp} />
-        <Route path="*" component={NoMatch} />
-      </Switch>
-    </div>
-  </BrowserRouter>
+    render() {
+      const { props, _onBtnAddNewItemClicked } = this
+      const { items } = props
+      console.log('parent component is Rendered!');
+      console.log('items:', items);
+
+      return (
+        <table>
+          <thead>
+            <tr><th colSpan="5">TODO LIST</th></tr>
+            <tr><th>Date</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {
+              items.map((_item, _idx) => 
+                <TodoItem key={_idx} index={_idx} />
+              )
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>
+                <button type="button" onClick={linkEvent(this, _onBtnAddNewItemClicked)}>
+                  Add Item
+                </button>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      )
+  }
+})
+
+const TodoItem = connect(
+  {
+    item: state`todoItems.${props`index`}`
+  },
+  class TodoItem extends Component {
+    _onClickRemoveItem(context) {
+      const handler = app.getSequence('onTodoItemRemoved')
+
+      handler({ arrayIndex: context.props.index })
+    }
+
+    render() {
+      const { props, _onClickRemoveItem } = this
+      const { index, item } = props
+      console.log('child component is rendered!, which has index:', index);
+      console.log('item:', item);
+
+      return (
+        <tr>
+          <td>Item Name: {item.name}</td>
+          <td>
+            <button type="button" onClick={linkEvent(this, _onClickRemoveItem)}>
+              Remove Item
+            </button>
+          </td>
+        </tr>
+      )
+    }
+  }
+)
+
+render(
+  <Container app={app}>
+    <TodoList />
+  </Container>,
+  document.getElementById('app')
 );
-
-render(routes, document.getElementById('app'));
