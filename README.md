@@ -1,9 +1,11 @@
-# inferno-boilerplate
+# infernojs and cerebraljs bugs
 
-## Overview
+## Cerebraljs "splice" bug
 
-This is a very basic boilerplate example for people wanting to get started with Inferno. This boilerplate uses `inferno`, `webpack`, `babel` and the `babel-plugin-inferno` JSX Babel plugin.
-This boilerplate shows how to use `inferno-router` in a very simple way.
+1. Add 2 todo items
+2. Select a fruit at the first row (from top)
+3. Remove the first row
+4. Observed that the value of fruit is not cleared (the component is not rendered again -- but the value is correct)
 
 ## Getting started
 
